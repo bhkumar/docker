@@ -1,0 +1,12 @@
+FROM python:3.6
+WORKDIR /opt
+COPY git-pull/<location> /opt/
+RUN python -V && pip3 -V && ls -lia /opt/ && apt update && apt install curl -y 
+#&& pip3 install Django
+#django-admin --version && pip install Django==3.0.2
+#RUN pip install -r requirements.txt 
+RUN python3.6 -m pip install -r requirements.txt && python3.6 -m pip install django-adminlte3 django_crontab django-cors-headers
+EXPOSE 8000
+CMD ["runserver", "0.0.0.0:8000"]
+ENTRYPOINT ["python", "manage.py"]
+

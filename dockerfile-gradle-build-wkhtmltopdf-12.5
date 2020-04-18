@@ -1,0 +1,35 @@
+FROM gradle:6.0.1 as gradlebuild
+COPY git-pull/ /opt/src
+RUN ls -lia /opt/src/
+WORKDIR /opt/src/<location>/
+RUN gradle bootJar 
+RUN ls -lia /opt/src/<location>/build/libs
+
+
+FROM java:8-jdk
+ARG BUILD_ID='<service_name>'
+#ENV JAVA_OPTIONS '-Xmx600m'
+ENV BUILD_ID=${BUILD_ID}
+EXPOSE 8085
+WORKDIR /opt/app
+RUN wget http://security.ubuntu.com/ubuntu/pool/main/libp/libpng/libpng12-0_1.2.54-1ubuntu1.1_amd64.deb && dpkg -i libpng12-0_1.2.54-1ubuntu1.1_amd64.deb
+RUN wget http://security.ubuntu.com/ubuntu/pool/main/libj/libjpeg-turbo/libjpeg-turbo8_1.4.2-0ubuntu3.3_amd64.deb && dpkg -i libjpeg-turbo8_1.4.2-0ubuntu3.3_amd64.deb
+RUN wget http://mirrors.kernel.org/ubuntu/pool/main/libj/libjpeg8-empty/libjpeg8_8c-2ubuntu8_amd64.deb && dpkg -i libjpeg8_8c-2ubuntu8_amd64.deb
+RUN wget http://security.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.0.0_1.0.2g-1ubuntu4.15_amd64.deb && dpkg -i libssl1.0.0_1.0.2g-1ubuntu4.15_amd64.deb
+
+RUN apt update || true && apt install -y libc-dev-bin libc6-dev linux-libc-dev manpages manpages-dev zlib1g-dev libc6 zlib1g libxfont1 xfonts-encodings && apt-get -f install
+
+RUN wget http://security.ubuntu.com/ubuntu/pool/main/o/openssl/libssl-dev_1.0.2g-1ubuntu4.15_amd64.deb && dpkg -i libssl-dev_1.0.2g-1ubuntu4.15_amd64.deb
+
+RUN wget http://mirrors.kernel.org/ubuntu/pool/main/x/xfonts-utils/xfonts-utils_7.7+3_amd64.deb && dpkg -i xfonts-utils_7.7+3_amd64.deb
+
+RUN wget http://mirrors.kernel.org/ubuntu/pool/main/x/xfonts-base/xfonts-base_1.0.4+nmu1_all.deb && dpkg -i xfonts-base_1.0.4+nmu1_all.deb
+
+RUN wget http://mirrors.kernel.org/ubuntu/pool/universe/x/xfonts-75dpi/xfonts-75dpi_1.0.4+nmu1_all.deb && dpkg -i  xfonts-75dpi_1.0.4+nmu1_all.deb
+
+RUN wget https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/wkhtmltox_0.12.5-1.trusty_amd64.deb && dpkg -i wkhtmltox_0.12.5-1.trusty_amd64.deb
+
+RUN apt install -y curl
+COPY --from=gradlebuild /opt/src/<location>/build/libs/${BUILD_ID}-0.0.1-SNAPSHOT.jar /opt/app/${BUILD_ID}.jar
+CMD java -Dspring.profiles.active=uat $JAVA_OPTIONS -jar /opt/app/${BUILD_ID}.jar
+

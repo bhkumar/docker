@@ -1,0 +1,26 @@
+FROM python:3.5
+WORKDIR /opt
+COPY git-pull/Premier-Agent-Network/odoo-12.0 /opt/
+RUN python -V && pip3 -V && ls -lia /opt/ && apt update && apt install curl -y
+RUN apt update && apt install -y libpq-dev python-dev libxml2-dev libxslt1-dev libldap2-dev libsasl2-dev libffi-dev && python -m pip install -r requirements.txt && python -m pip install num2words xlwt
+RUN curl -o wkhtmltox.deb -sSL https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/wkhtmltox_0.12.5-1.stretch_amd64.deb \
+        && echo '7e35a63f9db14f93ec7feeb0fce76b30c08f2057 wkhtmltox.deb' | sha1sum -c - \
+        && apt-get install -y --no-install-recommends ./wkhtmltox.deb
+RUN set -x;\
+    curl -sL https://deb.nodesource.com/setup_10.x | bash - \
+    && apt-get update \
+    && apt-get install -y apt-utils \
+    && apt-get install -y nodejs \
+    && nodejs -v \
+    && npm install -g rtlcss \
+    && rm -rf /var/lib/apt/lists/*
+
+EXPOSE 8069
+RUN chmod +x odoo-bin && ls -lia 
+CMD [ "--addons-path=/opt/addons,/opt/custom_addons", "-u", "all"]
+ENTRYPOINT [ "./odoo-bin", "--config=/opt/debian/odoo.conf" ]
+
+
+
+
+###Might be required packages g++ make gcc .build-deps curl git pixman-dev cairo-dev pangomm-dev libjpeg-turbo-dev giflib-dev

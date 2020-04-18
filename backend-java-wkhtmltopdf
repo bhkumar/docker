@@ -1,0 +1,22 @@
+FROM maven:3.3 as mvnbuild
+COPY git-pull/ /opt/
+WORKDIR /opt/
+RUN  mvn clean install -Dmaven.test.skip=true
+
+FROM java:8-jdk
+ARG BUILD_ID
+ENV BUILD_ID <project_name>
+#ENV JAVA_OPTIONS '-Xmx500m'
+#RUN apt-get install -y libpng-dev pkg-config && apt-get install wget -y 
+RUN wget http://security.ubuntu.com/ubuntu/pool/main/libp/libpng/libpng12-0_1.2.54-1ubuntu1.1_amd64.deb && dpkg -i libpng12-0_1.2.54-1ubuntu1.1_amd64.deb
+RUN wget http://security.ubuntu.com/ubuntu/pool/main/libj/libjpeg-turbo/libjpeg-turbo8_1.4.2-0ubuntu3.3_amd64.deb && dpkg -i libjpeg-turbo8_1.4.2-0ubuntu3.3_amd64.deb
+#RUN apt-get install libjpeg62-turbo-dev && apt-get install multiarch-support
+RUN wget http://mirrors.kernel.org/ubuntu/pool/main/libj/libjpeg8-empty/libjpeg8_8c-2ubuntu8_amd64.deb && dpkg -i libjpeg8_8c-2ubuntu8_amd64.deb
+RUN wget http://security.ubuntu.com/ubuntu/pool/main/libp/libpng/libpng12-0_1.2.54-1ubuntu1.1_amd64.deb && dpkg -i libpng12-0_1.2.54-1ubuntu1.1_amd64.deb
+RUN wget http://security.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.0.0_1.0.2g-1ubuntu4.15_amd64.deb && dpkg -i libssl1.0.0_1.0.2g-1ubuntu4.15_amd64.deb 
+#RUN wget http://security.ubuntu.com/ubuntu/pool/main/o/openssl/libssl-dev_1.0.2g-1ubuntu4.15_amd64.deb && dpkg -i libssl-dev_1.0.2g-1ubuntu4.15_amd64.deb 
+RUN wget https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.1/wkhtmltox-0.12.1_linux-wheezy-amd64.deb && dpkg -i wkhtmltox-0.12.1_linux-wheezy-amd64.deb 
+WORKDIR /opt/app
+COPY --from=mvnbuild /opt/target/${BUILD_ID}-0.0.1-SNAPSHOT.jar /opt/app/${BUILD_ID}.jar
+CMD java -jar /opt/app/${BUILD_ID}.jar
+

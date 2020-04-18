@@ -1,0 +1,17 @@
+FROM node:8.11.2-alpine as ngbuild
+COPY ./ /opt/<location>
+WORKDIR /opt/<location>
+RUN rm -rf /opt/<location>/dist/ && \
+    apk update && apk add git && \ 
+    npm install && \ 
+    node_modules/@angular/cli/bin/ng build --prod
+
+
+FROM nginx:1.15-alpine
+RUN rm -rf /etc/nginx/conf.d/* /var/www/html/*
+COPY --from=ngbuild /opt/<location>/dist/ /var/www/html/
+#COPY dist/ /var/www/html/
+COPY nginx/conf.d /etc/nginx/conf.d
+COPY nginx/default.d /etc/nginx/default.d
+COPY nginx/nginx.conf /etc/nginx/nginx.conf
+

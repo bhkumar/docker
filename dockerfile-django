@@ -1,0 +1,17 @@
+FROM python:3.6
+WORKDIR /opt
+COPY git-pull/ /opt/
+RUN python -V && pip3 -V && ls -lia /opt/ && apt update && apt install curl -y && apt install -y libpq-dev python-dev libxml2-dev libxslt1-dev libldap2-dev libsasl2-dev libffi-dev python3-pip build-essential wget python3-dev python3-venv python3-wheel libxslt-dev libzip-dev libldap2-dev libsasl2-dev python3-setuptools node-less vim
+#COPY index.html /usr/local/lib/python3.6/site-packages/rest_framework_swagger/templates/rest_framework_swagger/index.html
+#&& pip3 install Django
+#django-admin --version && pip install Django==3.0.2
+RUN pip install -r requirements.txt
+#RUN python -m pip install -r requirements.txt &&
+RUN python -m pip install django-adminlte3 django_crontab django-cors-headers python-dotenv num2words xlwt
+#passwordgenerator password_generator random-password-generator
+EXPOSE 8000
+COPY index.html /usr/local/lib/python3.6/site-packages/rest_framework_swagger/templates/rest_framework_swagger/index.html
+CMD ["runserver", "0.0.0.0:8000"]
+ENTRYPOINT ["python", "manage.py"]
+#CMD tail -f /dev/null
+

@@ -1,0 +1,18 @@
+FROM gradle:6.0.1-jdk8 
+COPY git-pull/ /opt/app
+RUN ls -lia /opt/app/ && apt update && apt install vim -y  
+WORKDIR /opt/app/
+#RUN  gradle ofbiz
+#RUN ls -lia /opt/app/build/libs
+
+#FROM java:8-jre-alpine
+#ARG BUILD_ID='ofbiz'
+#ENV JAVA_OPTIONS '-Xmx600m'
+#ENV BUILD_ID=${BUILD_ID}
+EXPOSE 8080
+#WORKDIR /opt/app
+#RUN apk update && apk add curl 
+#COPY --from=gradlebuild /opt/app/build/libs/${BUILD_ID}-0.0.1-SNAPSHOT.jar /opt/app/${BUILD_ID}.jar
+#CMD java -jar /opt/app/${BUILD_ID}.jar
+CMD tail -f /dev/null
+

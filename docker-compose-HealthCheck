@@ -1,0 +1,161 @@
+version: '3.7'
+services:
+  frontend:
+    build:
+     context: ./dockerfiles/frontend
+     dockerfile: dockerfile
+    image: <project_name>/frontend:1
+    ports:
+       - "81:80"
+       - "443:443"
+    networks:
+       - <defined_network>
+    deploy:
+      restart_policy:
+        condition: always
+    healthcheck:
+        test: curl -ISLs http://localhost
+        interval: 1m
+        timeout: 10s
+        retries: 3
+        start_period: 1m
+    deploy:
+      resources:
+        limits:
+          memory: 600m
+        reservations:
+          memory: 300m
+    volumes:
+       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+    container_name: frontend
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "4"
+
+
+  <second_service>:
+    build:
+     context: ./dockerfiles/<second_service>
+     dockerfile: dockerfile
+    image: <project_name>/<second_service>:1
+    ports:
+       - "9090:9090"
+    networks:
+       - <defined_network>
+    deploy:
+      restart_policy:
+        condition: always
+    healthcheck:
+        test: curl -ISLs http://localhost:9090
+        interval: 1m
+        timeout: 10s
+        retries: 3
+        start_period: 1m
+    deploy:
+      resources:
+        limits:
+          memory: 4g
+        reservations:
+          memory: 1g 
+    env_file:
+       - ./environment/<second_service>.env
+    depends_on:
+       - <database_name>
+    container_name: <second_service>
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "4"
+
+
+
+
+  <service_name3>:
+    build:
+     context: ./dockerfiles/<service_name3>
+     dockerfile: dockerfile
+    image: <project_name>/<service_name3>:1
+    ports:
+       - "82:8080"
+       - "8443:8443"
+    networks:
+       - <defined_network>
+    deploy:
+      restart_policy:
+        condition: always
+    healthcheck:
+        test: curl -ISLs http://localhost:8080
+        interval: 1m
+        timeout: 10s
+        retries: 3
+        start_period: 1m
+    deploy:
+      resources:
+        limits:
+          memory: 4g
+        reservations:
+          memory: 2g
+    env_file:
+       - ./environment/<service_name3>.env
+    depends_on:
+       - <database_name>
+    container_name: <service_name3>
+    command: ["gradle", "cleanAll", "loadAll", "ofbiz"] 
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "4"
+
+
+  <database_name>:
+    image: postgres:12.1
+    container_name: database
+    volumes:
+       - ./database/:/var/lib/postgresql/data
+    restart: always
+    ports:
+       - "5432:5432"
+    networks:
+       - <defined_network>
+    environment:
+       - POSTGRES_PASSWORD=xxxxyyyyy@123#
+       - POSTGRES_USER=postgres
+       - POSTGRES_DB=xxxxyyyyy
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "4"
+
+    
+  redis:
+    image: redis
+    container_name: redis
+    ports:
+       - "6382:6382"
+    volumes:
+       - ./redis/data/:/data/db
+       - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+    restart: always
+    networks:
+       - <defined_network>
+    command: redis-server /usr/local/etc/redis/redis.conf
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "4"
+
+
+
+
+networks:
+  <defined_network>:
+   driver: bridge
+   external: true
+

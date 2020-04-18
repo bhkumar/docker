@@ -1,0 +1,16 @@
+FROM maven:3.3 as mvnbuild
+ARG BUILD_ID
+ENV BUILD_ID <project_name> 
+COPY . /opt/${BUILD_ID}
+WORKDIR /opt/${BUILD_ID}
+RUN rm -rf /opt/${BUILD_ID}/target/ && mvn clean install -Dspring.profiles.active=prod -DskipTests=true
+
+FROM java:8-jre-alpine
+ARG BUILD_ID
+ENV BUILD_ID <project_name>
+ENV JAVA_OPTIONS '-Xmx300m'
+WORKDIR /opt/app
+COPY --from=mvnbuild /opt/${BUILD_ID}/target/${BUILD_ID}-0.0.1-SNAPSHOT.jar /opt/app/${BUILD_ID}.jar
+#COPY ./target/${BUILD_ID}-0.0.1-SNAPSHOT.jar /opt/app/${BUILD_ID}.jar
+CMD java -XX:+PrintFlagsFinal -Dserver.port=8080 $JAVA_OPTIONS -jar -Dspring.profiles.active=prod /opt/app/${BUILD_ID}.jar
+

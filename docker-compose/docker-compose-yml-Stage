@@ -1,0 +1,262 @@
+version: '3.7'
+services:
+  <service_name>:
+    build:
+      context: ./dockerfiles/<service_name>
+      dockerfile: dockerfile
+    image: project_name/<service_name>:v1
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - <netwrok_app>
+    deploy:
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          memory: 300m
+        reservations:
+          memory: 200m
+    healthcheck:
+      test: curl -ISLs http://localhost
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 1m
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/explorer/nginx.conf:/etc/nginx/conf.d/nginx.conf
+    container_name: explorer
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+
+
+
+  <service_name>:
+    build: 
+     context: ./dockerfiles/<service_name>
+     dockerfile: dockerfile
+    image: project_name/<service_name>:v1
+    ports:
+      - "81:80"
+    networks:
+      - <network_name>
+    deploy:
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          memory: 300m
+        reservations: 
+          memory: 200m
+    healthcheck:
+      test: curl -ISLs http://localhost
+      interval: 1m
+      timeout:  10s
+      retries:  4
+      start_period: 1m
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/admin/nginx.conf:/etc/nginx/conf.d/nginx.conf
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+    container_name: <service_name>
+
+
+
+  <service_name>:
+    build:
+     context: ./dockerfiles/<service_name>
+     dockerfile: dockerfile
+    image: <project_name>/<service_name>:v1
+    ports:
+      - "82:80"
+    networks:
+      - <network_name>
+    deploy:
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          memory: 300m
+        reservations:
+          memory: 200m
+    healthcheck:
+      test: curl -ISLs http://localhost
+      interval: 1m
+      timeout:  10s
+      retries:  4
+      start_period: 1m
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/user/nginx.conf:/etc/nginx/conf.d/nginx.conf
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+    container_name: user
+
+
+
+  <service_name>:
+    build:
+      context: ./dockerfiles/<service_name>
+      dockerfile: dockerfile
+    image: <project_name>/<service_name>:v1
+    ports:
+      - "8080:8080"
+    depends_on:
+      - database
+      - redis
+    container_name: <service_name>
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+        reservations:
+          memory: 400m
+      restart_policy:
+        condition: on-failure
+    healthcheck:
+      test: curl -ISLs http://localhost:8080
+      interval: 1m
+      timeout: 10s
+      retries: 4
+      start_period: 1m
+    env_file:
+      - ./environment/<service_name>.env
+    networks:
+      - <network_name>
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+
+
+
+  bigchaindb:
+    build:
+      context: ./dockerfiles/bigchaindb
+      dockerfile: dockerfile
+    image: <project_name>/bigchaindb:v1
+    depends_on:
+      - mongodb
+#      - tendermint
+    networks:
+      - <network_name>
+    volumes:
+      - ./bigchain/bigchaindb:/usr/src/app
+    ports:
+      - "9984:9984"
+      - "9985:9985"
+      - "26658:26658"
+    restart: always
+    env_file:
+      - ./environment/bigchaindb.env
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "500m"
+        max-file: "5"
+    container_name: bigchaindb
+
+
+
+
+  tendermint:
+    build:
+      context: ./dockerfiles/tendermint
+      dockerfile: dockerfile
+    image: <network_name>/tendermint:v1
+    ports:
+      - "26656:26656"
+      - "26657:26657"
+    restart: always
+    networks:
+      - <network_name>
+    entrypoint: ''
+    command: sh -c "/usr/bin/tendermint init && tendermint node --consensus.create_empty_blocks=false --proxy_app=tcp://bigchaindb:26658" 
+    container_name: tendermint
+    logging:
+      driver: "json-file"
+      options: 
+        max-size: "500m"
+        max-file: "5"
+
+
+
+  mongodb:
+    image: mongo:3.6
+    ports:
+      - "27017:27017"
+    restart: always
+    networks:
+      - <network_name>
+    container_name: mongodb
+    volumes:
+      - ./mongodb/data:/data/db
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "300m"
+        max-file: "4"
+
+
+
+
+  database:
+    image: mysql:5.7.26
+    container_name: database
+    env_file:
+      - ./environment/database.env
+    volumes:
+      - ./mysql/mysql_data:/var/lib/mysql
+    restart: always
+    ports:
+      -  "3306:3306"
+    networks:
+      - <network_name>
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "400m"
+        max-file: "3"
+
+
+
+  redis:
+    image: redis
+    container_name: redis
+    ports:
+       - "6379:6379"
+    volumes:
+       - ./redis/data/:/data/db
+       - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+    restart: always
+    networks:
+       - <network_name>
+    command: redis-server /usr/local/etc/redis/redis.conf
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "400m"
+        max-file: "3"
+
+
+
+
+networks:
+  <network_name>:
+    driver: bridge
+

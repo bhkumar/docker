@@ -1,0 +1,17 @@
+##stage 0 "building stage based on Node,js", to build and compile the code
+FROM node:10.16 as build
+WORKDIR /code
+COPY git-pull/product-pages/ /code/
+RUN ls -lia /code/
+RUN  npm install && npm run build && ls -lia
+#RUN npm run build 
+
+
+##stage 1, based on the nginx for serving compiled code 
+FROM nginx:1.14
+EXPOSE 80 443
+RUN  apt-get update && apt-get install curl -y && rm -rf /usr/share/nginx/html/*
+COPY  --from=build /code/build/ /usr/share/nginx/html/
+RUN  ls -lia /usr/share/nginx/html/
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+

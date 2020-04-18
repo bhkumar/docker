@@ -1,0 +1,87 @@
+version: '3.7'
+services: 
+  frontend:
+    build:
+     context: ./dockerfiles/frontend
+     dockerfile: dockerfile
+    image: <project_name>/frontend:1
+    ports:
+       - "80:80"
+       - "443:443"
+    networks: 
+       - <defined_network>
+    deploy:                                                      
+      restart_policy:                                   
+        condition: always 
+    healthcheck:
+        test: curl -ISLs http://localhost
+        interval: 1m
+        timeout: 10s
+        retries: 3
+        start_period: 1m
+    deploy:
+      resources:
+        limits:
+          memory: 800m
+        reservations:
+          memory: 500m
+    container_name: frontend
+
+
+
+  backend:  
+    build:
+     context: ./dockerfiles/backend
+     dockerfile: dockerfile
+    image: <project_name>/backend:1
+    ports:
+       - "8090:8090"
+    networks:
+       - <defined_network>
+    deploy:                                                     
+      restart_policy:
+        condition: always
+    healthcheck:
+        test: curl -ISLs http://localhost:8090
+        interval: 1m
+        timeout: 10s
+        retries: 3
+        start_period: 1m
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+        reservations:
+          memory: 500m
+    env_file:
+       - ./environment/backend.env
+    depends_on:
+       - database
+    container_name: backend
+
+
+
+  database:
+    image: mysql:5.7.26
+    container_name: database
+    volumes:
+       - ./database/data/:/var/lib/mysql
+    restart: always
+    ports:
+       - "3306:3306"
+    networks:
+       - <defined_network>
+    environment:
+       - MYSQL_ROOT_PASSWORD=root
+       - MYSQL_DATABASE=xxxxyyyy
+       - MYSQL_USER=xxxxyyyyyy
+       - MYSQL_PASSWORD=xxxxyyyyyy
+    restart: always
+  
+
+
+
+networks: 
+  <define_network>: 
+   driver: bridge
+   external: true 
